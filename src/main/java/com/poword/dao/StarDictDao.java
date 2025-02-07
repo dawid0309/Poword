@@ -1,6 +1,8 @@
 package com.poword.dao;
 import java.sql.*;
 import java.util.*;
+
+import lombok.Getter;
 import org.json.JSONObject;
 
 import com.poword.model.WordBaseModel;
@@ -11,55 +13,14 @@ import com.poword.helper.DatabaseConnectHelper;
 public class StarDictDao {
 
     private Connection conn;
-    private boolean verbose;
-    private List<Map.Entry<String, Integer>> fields;
-
+    @Getter
+    private static StarDictDao instance = new StarDictDao();
 
     public StarDictDao() {
         this.conn = DatabaseConnectHelper.getInstance("src\\main\\java\\com\\poword\\resources\\db\\stardict.db").getConnection();
     }
 
-    // 数据库记录转化为字典
-    private Map<String, Object> recordToObj(ResultSet record) throws SQLException {
-        if (record == null) {
-            return null;
-        }
-        Map<String, Object> word = new HashMap<>();
-        for (Map.Entry<String, Integer> field : fields) {
-            word.put(field.getKey(), record.getObject(field.getValue()));
-        }
-        String detail = (String) word.get("detail");
-        if (detail != null) {
-            try {
-                JSONObject obj = new JSONObject(detail);
-                word.put("detail", obj.toMap());
-            } catch (Exception e) {
-                word.put("detail", null);
-            }
-        }
-        return word;
-    }
-
-    // 关闭数据库
-    public void close() {
-        if (this.conn != null) {
-            try {
-                this.conn.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-        this.conn = null;
-    }
-
-    // 输出日志
-    private void out(String text) {
-        if (this.verbose) {
-            System.out.println(text);
-        }
-    }
-
-        /**
+    /**
      * @param word
      * @return
      */
@@ -98,7 +59,7 @@ public class StarDictDao {
             if (record.next()) {
                 if (detailed) {
                     WordDetailModel wordDetailModel = new WordDetailModel();
-                    wordDetailModel.setWord(record.getString("id"));
+                    wordDetailModel.setId(record.getString("id"));
                     wordDetailModel.setWord(record.getString("word"));
                     wordDetailModel.setPhonetic(record.getString("phonetic"));
                     wordDetailModel.setDefinition(Arrays.asList(record.getString("definition").split("\n")));
@@ -111,6 +72,7 @@ public class StarDictDao {
                     wordModel = wordDetailModel;
                 } else {
                     WordModel wordModel1 = new WordModel();
+                    wordModel1.setId(record.getString("id"));
                     wordModel1.setWord(record.getString("id"));
                     wordModel1.setWord(record.getString("word"));
                     wordModel1.setDefinition(Arrays.asList(record.getString("definition").split("\n")));
@@ -134,32 +96,59 @@ public class StarDictDao {
     }
 
 
-    // 查询单词匹配
-    public List<Map.Entry<Integer, String>> match(String word, int limit, boolean strip) {
-        List<Map.Entry<Integer, String>> result = new ArrayList<>();
+    public List<WordBaseModel> match(String word, int limit, boolean strip, boolean detailed) {
+        List<WordBaseModel> result = new ArrayList<>();
         String sql;
         try {
             if (!strip) {
-                sql = "SELECT id, word FROM stardict WHERE word >= ? ORDER BY word COLLATE NOCASE LIMIT ?;";
+                sql = "SELECT * FROM stardict WHERE word >= ? ORDER BY word COLLATE NOCASE LIMIT ?;";
             } else {
-                sql = "SELECT id, word FROM stardict WHERE sw >= ? ORDER BY sw, word COLLATE NOCASE LIMIT ?;";
+                sql = "SELECT * FROM stardict WHERE sw >= ? ORDER BY sw, word COLLATE NOCASE LIMIT ?;";
                 word = stripWord(word);
             }
+
             PreparedStatement pstmt = this.conn.prepareStatement(sql);
             pstmt.setString(1, word);
             pstmt.setInt(2, limit);
-            ResultSet records = pstmt.executeQuery();
-            while (records.next()) {
-                result.add(new AbstractMap.SimpleEntry<>(records.getInt("id"), records.getString("word")));
+            ResultSet resultSet = pstmt.executeQuery();
+
+            while (resultSet.next()) {
+                WordBaseModel wordModel;
+                if (detailed) {
+                    // For detailed data, map the full data to WordDetailModel
+                    WordDetailModel wordDetailModel = new WordDetailModel();
+                    wordDetailModel.setId(resultSet.getString("id"));
+                    wordDetailModel.setWord(resultSet.getString("word"));
+                    wordDetailModel.setPhonetic(resultSet.getString("phonetic"));
+                    wordDetailModel.setDefinition(Arrays.asList(resultSet.getString("definition").split("\n")));
+                    wordDetailModel.setTranslation(Arrays.asList(resultSet.getString("translation").split("\n")));
+                    wordDetailModel.setPos(resultSet.getString("pos"));
+                    wordDetailModel.setTag(resultSet.getString("tag"));
+                    wordDetailModel.setExchange(resultSet.getString("exchange"));
+                    // Add other fields if needed
+                    wordModel = wordDetailModel;
+                } else {
+                    // For non-detailed data, map to WordModel
+                    WordModel wordModel1 = new WordModel();
+                    wordModel1.setId(resultSet.getString("id"));
+                    wordModel1.setWord(resultSet.getString("word"));
+                    wordModel1.setDefinition(Arrays.asList(resultSet.getString("definition").split("\n")));
+                    wordModel1.setTranslation(Arrays.asList(resultSet.getString("translation").split("\n")));
+                    wordModel1.setTag(resultSet.getString("tag"));
+                    wordModel = wordModel1;
+                }
+
+                result.add(wordModel);  // Add the WordBaseModel to result list
             }
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return result;
     }
 
-    // 批量查询
-    public List<Map<String, Object>> queryBatch(List<Object> keys) {
+
+    public List<WordBaseModel> queryBatch(List<Object> keys, boolean detailed) {
         if (keys == null || keys.isEmpty()) {
             return new ArrayList<>();
         }
@@ -174,9 +163,8 @@ public class StarDictDao {
             }
         }
         sql.append(String.join(" OR ", querys)).append(";");
-        Map<String, Map<String, Object>> queryWord = new HashMap<>();
-        Map<Integer, Map<String, Object>> queryId = new HashMap<>();
-        List<Map<String, Object>> results = new ArrayList<>();
+
+        List<WordBaseModel> results = new ArrayList<>();
 
         try {
             PreparedStatement pstmt = this.conn.prepareStatement(sql.toString());
@@ -184,26 +172,47 @@ public class StarDictDao {
                 pstmt.setObject(i + 1, keys.get(i));
             }
             ResultSet resultSet = pstmt.executeQuery();
-            while (resultSet.next()) {
-                Map<String, Object> obj = recordToObj(resultSet);
-                queryWord.put(((String) obj.get("word")).toLowerCase(), obj);
-                queryId.put((Integer) obj.get("id"), obj);
-            }
 
-            for (Object key : keys) {
-                if (key instanceof Integer) {
-                    results.add(queryId.getOrDefault(key, null));
-                } else if (key instanceof String) {
-                    results.add(queryWord.getOrDefault(((String) key).toLowerCase(), null));
+            while (resultSet.next()) {
+                WordBaseModel wordModel;
+                if (detailed) {
+                    WordDetailModel wordDetailModel = new WordDetailModel();
+                    wordDetailModel.setId(resultSet.getString("id"));
+                    wordDetailModel.setWord(resultSet.getString("word"));
+                    wordDetailModel.setPhonetic(resultSet.getString("phonetic"));
+                    wordDetailModel.setDefinition(Arrays.asList(resultSet.getString("definition").split("\n")));
+                    wordDetailModel.setTranslation(Arrays.asList(resultSet.getString("translation").split("\n")));
+                    wordDetailModel.setPos(resultSet.getString("pos"));
+                    wordDetailModel.setTag(resultSet.getString("tag"));
+                    wordDetailModel.setExchange(resultSet.getString("exchange"));
+                    // Add other fields as needed
+                    wordModel = wordDetailModel;
                 } else {
-                    results.add(null);
+                    WordModel wordModel1 = new WordModel();
+                    wordModel1.setWord(resultSet.getString("word"));
+                    wordModel1.setId(resultSet.getString("id"));
+                    wordModel1.setDefinition(Arrays.asList(resultSet.getString("definition").split("\n")));
+                    wordModel1.setTranslation(Arrays.asList(resultSet.getString("translation").split("\n")));
+                    wordModel1.setTag(resultSet.getString("tag"));
+                    wordModel = wordModel1;
+                }
+
+                // Match the original key type to ensure the correct result is added
+                for (Object key : keys) {
+                    if (key instanceof Integer && wordModel.getWord().equals(resultSet.getString("word"))) {
+                        results.add(wordModel);
+                    } else if (key instanceof String && wordModel.getWord().equals(resultSet.getString("word"))) {
+                        results.add(wordModel);
+                    }
                 }
             }
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return results;
     }
+
 
     // 取得单词总数
     public int count() {
@@ -237,21 +246,6 @@ public class StarDictDao {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
-        }
-        return true;
-    }
-
-    // 提交变更
-    public boolean commit() {
-        try {
-            this.conn.commit();
-        } catch (SQLException e) {
-            try {
-                this.conn.rollback();
-            } catch (SQLException rollbackException) {
-                rollbackException.printStackTrace();
-            }
             return false;
         }
         return true;

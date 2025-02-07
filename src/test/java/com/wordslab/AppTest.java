@@ -1,5 +1,6 @@
 package com.wordslab;
 
+import com.poword.model.WordBaseModel;
 import org.junit.jupiter.api.Test;
 
 import com.poword.dao.StarDictDao;
@@ -32,10 +33,7 @@ class AppTest {
 
     @Test
     void MatchTest() {
-        List<Entry<Integer, String>> matchedWord = starDict.match("Super", 10, true);
-        for (Entry<Integer,String> entry : matchedWord) {
-            WordModel result = (WordModel) starDict.query(entry.getKey(), false);
-            System.out.println(result);
-        }
+        List<WordBaseModel> matchedWord = starDict.match("pierce", 10, true,true);
+        matchedWord.forEach(System.out::println);
     }
 }

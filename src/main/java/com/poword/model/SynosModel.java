@@ -9,7 +9,7 @@ import java.util.Date;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Synos {
+public class SynosModel {
     private int id;
     private String word;
     private String synos;

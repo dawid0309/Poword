@@ -5,20 +5,20 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import com.poword.helper.DatabaseConnectHelper;
-import com.poword.model.Synos;
+import com.poword.model.SynosModel;
 
 public class SynosDao {
 
     private Connection conn = DatabaseConnectHelper.getInstance("src\\main\\java\\com\\poword\\resources\\db\\stardict.db").getConnection();
 
-    public void createRecord(Synos synos) {
+    public void createRecord(SynosModel synosModel) {
         String sql = "INSERT INTO synos (id, word, synos, updatetime, createdtime, source) VALUES(?, ?, ?, datetime('now'), datetime('now'), ?)";
 
         try (PreparedStatement pstmt = this.conn.prepareStatement(sql)) {
-            pstmt.setInt(1, synos.getId());
-            pstmt.setString(2, synos.getWord());
-            pstmt.setString(3, synos.getSynos()); // Ensure this is a valid JSON string
-            pstmt.setString(4, synos.getSource());
+            pstmt.setInt(1, synosModel.getId());
+            pstmt.setString(2, synosModel.getWord());
+            pstmt.setString(3, synosModel.getSynos()); // Ensure this is a valid JSON string
+            pstmt.setString(4, synosModel.getSource());
             pstmt.execute();
             System.out.println("Record created successfully.");
         } catch (SQLException e) {

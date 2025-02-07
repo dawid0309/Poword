@@ -1,28 +1,19 @@
 package com.poword.tool;
 
-import com.google.gson.JsonObject;
 import com.poword.dao.StarDictDao;
 import com.poword.dao.SynosDao;
-import com.poword.helper.DatabaseConnectHelper;
 import com.poword.model.*;
 
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.security.Identity;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import org.json.JSONObject;
-import org.json.JSONStringer;
 
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
 
 
 public class SynosImporter{
@@ -31,14 +22,14 @@ public class SynosImporter{
 
     public void insertSynos(String filePath){
         ArrayList<JSONObject> jsonObjects = getJsonObjects(filePath);
-        ArrayList<Synos> synosList = getSynosArray(jsonObjects);
-        for (Synos synos : synosList) {
-            int id = starDictDao.getIdByWord(synos.getWord());
+        ArrayList<SynosModel> synosModelList = getSynosArray(jsonObjects);
+        for (SynosModel synosModel : synosModelList) {
+            int id = starDictDao.getIdByWord(synosModel.getWord());
             if (id == 0){
                 continue;
             }
-            synos.setId(id);
-            synosDao.createRecord(synos);
+            synosModel.setId(id);
+            synosDao.createRecord(synosModel);
         }
     }
 
@@ -64,12 +55,12 @@ public class SynosImporter{
         return jsonList;
     }
 
-    private ArrayList<Synos> getSynosArray(ArrayList<JSONObject> jsonList) {
-        ArrayList<Synos> synosList = new ArrayList<Synos>();
+    private ArrayList<SynosModel> getSynosArray(ArrayList<JSONObject> jsonList) {
+        ArrayList<SynosModel> synosModelList = new ArrayList<SynosModel>();
         // 提取 synos 字段
         for (JSONObject jsonObject : jsonList) {
             try{
-                Synos synos = new Synos();
+                SynosModel synosModel = new SynosModel();
                 String word = jsonObject.getJSONObject("content")
                         .getJSONObject("word")
                         .getString("wordHead");
@@ -80,14 +71,14 @@ public class SynosImporter{
                         .getJSONObject("syno")
                         .getJSONArray("synos");
                 String source = jsonObject.getString("bookId").split("_")[0];
-                synos.setWord(word);
-                synos.setSynos(synosJsonArray.toString());
-                synos.setSource(source);
-                synosList.add(synos);
+                synosModel.setWord(word);
+                synosModel.setSynos(synosJsonArray.toString());
+                synosModel.setSource(source);
+                synosModelList.add(synosModel);
             } catch (JSONException e) {
                 // System.err.println("Skipping invalid line: " + jsonObject.toString());
             }
         }
-        return synosList;
+        return synosModelList;
     }
 }
