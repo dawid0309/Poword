@@ -2,13 +2,11 @@ package com.wordslab;
 
 import com.poword.dao.DictDao;
 import com.poword.model.WordBaseModel;
+import com.poword.model.WordModel;
 import com.poword.service.WordQueryService;
 import org.junit.jupiter.api.Test;
 
-import com.poword.dao.DictDao;
 import com.poword.model.WordDetailModel;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 
@@ -23,8 +21,14 @@ class QueryTest {
     WordQueryService wordQueryService = WordQueryService.getInstance();
 
     @Test
+    void QueryDetailTest() {
+        WordDetailModel result = wordQueryService.queryDetailByWord("wolf");
+        System.out.println(result);
+    }
+
+    @Test
     void QueryTest() {
-        WordDetailModel result = wordQueryService.queryWordDetailByWord("apple");
+        WordModel result = wordQueryService.queryByWord("wolf");
         System.out.println(result);
     }
 

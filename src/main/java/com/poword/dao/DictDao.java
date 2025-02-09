@@ -39,9 +39,62 @@ public class DictDao {
 
 
     public WordBaseModel query(Object key, boolean detailed) {
-        String sql;
+        if (detailed) {
+            // 查询 WordDetailModel
+            return queryWordDetailModel(key);
+        } else {
+            // 查询 WordModel
+            return queryWordModel(key);
+        }
+    }
+
+    private WordDetailModel queryWordDetailModel(Object key) {
+        String sql = "";
+        WordDetailModel wordDetailModel = null;
         ResultSet record = null;
-        WordBaseModel wordModel = null;
+
+        try {
+            if (key instanceof Integer) {
+                sql = "SELECT dict.*, synos.synos FROM dict LEFT JOIN synos on dict.id = synos.id WHERE id = ?;";
+            } else if (key instanceof String) {
+                sql = "SELECT dict.*, synos.synos FROM dict LEFT JOIN synos on dict.id = synos.id WHERE dict.word = ?;";
+            } else {
+                return null;
+            }
+
+            PreparedStatement pstmt = this.conn.prepareStatement(sql);
+            pstmt.setObject(1, key);
+            record = pstmt.executeQuery();
+
+            if (record.next()) {
+                wordDetailModel = new WordDetailModel();
+                wordDetailModel.setId(record.getInt("id"));
+                wordDetailModel.setWord(record.getString("word"));
+                wordDetailModel.setPhonetic(record.getString("phonetic"));
+                wordDetailModel.setDefinition(Arrays.asList(record.getString("definition").split("\n")));
+                wordDetailModel.setTranslation(Arrays.asList(record.getString("translation").split("\n")));
+                wordDetailModel.setPos(record.getString("pos"));
+                wordDetailModel.setTag(record.getString("tag"));
+                wordDetailModel.setExchange(record.getString("exchange"));
+                wordDetailModel.setSynos(record.getString("synos"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (record != null) record.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return wordDetailModel;
+    }
+
+    private WordModel queryWordModel(Object key) {
+        String sql = "";
+        WordModel wordModel = null;
+        ResultSet record = null;
+
         try {
             if (key instanceof Integer) {
                 sql = "SELECT * FROM dict WHERE id = ?;";
@@ -56,43 +109,27 @@ public class DictDao {
             record = pstmt.executeQuery();
 
             if (record.next()) {
-                if (detailed) {
-                    WordDetailModel wordDetailModel = new WordDetailModel();
-                    wordDetailModel.setId(record.getString("id"));
-                    wordDetailModel.setWord(record.getString("word"));
-                    wordDetailModel.setPhonetic(record.getString("phonetic"));
-                    wordDetailModel.setDefinition(Arrays.asList(record.getString("definition").split("\n")));
-                    wordDetailModel.setTranslation(Arrays.asList(record.getString("translation").split("\n")));
-                    wordDetailModel.setPos(record.getString("pos"));
-                    wordDetailModel.setTag(record.getString("tag"));
-                    wordDetailModel.setExchange(record.getString("exchange"));
-                    // wordDetailModel.setSyno(record.getString("syno"));
-                    // wordDetailModel.setStar(record.getString("star"));
-                    wordModel = wordDetailModel;
-                } else {
-                    WordModel wordModel1 = new WordModel();
-                    wordModel1.setId(record.getString("id"));
-                    wordModel1.setWord(record.getString("id"));
-                    wordModel1.setWord(record.getString("word"));
-                    wordModel1.setDefinition(Arrays.asList(record.getString("definition").split("\n")));
-                    wordModel1.setTranslation(Arrays.asList(record.getString("translation").split("\n")));
-                    wordModel1.setTag(record.getString("tag"));
-                    wordModel = wordModel1;
-                }
+                wordModel = new WordModel();
+                wordModel.setId(record.getInt("id"));
+                wordModel.setWord(record.getString("word"));
+                wordModel.setDefinition(Arrays.asList(record.getString("definition").split("\n")));
+                wordModel.setTranslation(Arrays.asList(record.getString("translation").split("\n")));
+                wordModel.setTag(record.getString("tag"));
             }
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            if (record != null) {
-                try {
-                    record.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
+            try {
+                if (record != null) record.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
         }
         return wordModel;
     }
+
+
+
 
 
     public List<WordBaseModel> match(String word, int limit, boolean strip, boolean detailed) {
@@ -116,7 +153,7 @@ public class DictDao {
                 if (detailed) {
                     // For detailed data, map the full data to WordDetailModel
                     WordDetailModel wordDetailModel = new WordDetailModel();
-                    wordDetailModel.setId(resultSet.getString("id"));
+                    wordDetailModel.setId(resultSet.getInt("id"));
                     wordDetailModel.setWord(resultSet.getString("word"));
                     wordDetailModel.setPhonetic(resultSet.getString("phonetic"));
                     wordDetailModel.setDefinition(Arrays.asList(resultSet.getString("definition").split("\n")));
@@ -129,7 +166,7 @@ public class DictDao {
                 } else {
                     // For non-detailed data, map to WordModel
                     WordModel wordModel1 = new WordModel();
-                    wordModel1.setId(resultSet.getString("id"));
+                    wordModel1.setId(resultSet.getInt("id"));
                     wordModel1.setWord(resultSet.getString("word"));
                     wordModel1.setDefinition(Arrays.asList(resultSet.getString("definition").split("\n")));
                     wordModel1.setTranslation(Arrays.asList(resultSet.getString("translation").split("\n")));
@@ -176,7 +213,7 @@ public class DictDao {
                 WordBaseModel wordModel;
                 if (detailed) {
                     WordDetailModel wordDetailModel = new WordDetailModel();
-                    wordDetailModel.setId(resultSet.getString("id"));
+                    wordDetailModel.setId(resultSet.getInt("id"));
                     wordDetailModel.setWord(resultSet.getString("word"));
                     wordDetailModel.setPhonetic(resultSet.getString("phonetic"));
                     wordDetailModel.setDefinition(Arrays.asList(resultSet.getString("definition").split("\n")));
@@ -189,7 +226,7 @@ public class DictDao {
                 } else {
                     WordModel wordModel1 = new WordModel();
                     wordModel1.setWord(resultSet.getString("word"));
-                    wordModel1.setId(resultSet.getString("id"));
+                    wordModel1.setId(resultSet.getInt("id"));
                     wordModel1.setDefinition(Arrays.asList(resultSet.getString("definition").split("\n")));
                     wordModel1.setTranslation(Arrays.asList(resultSet.getString("translation").split("\n")));
                     wordModel1.setTag(resultSet.getString("tag"));
