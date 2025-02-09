@@ -9,7 +9,7 @@ import com.poword.model.SynosModel;
 
 public class SynosDao {
 
-    private Connection conn = DatabaseConnectHelper.getInstance("src\\main\\java\\com\\poword\\resources\\db\\stardict.db").getConnection();
+    private Connection conn = DatabaseConnectHelper.getInstance().getConnection();
 
     public void createRecord(SynosModel synosModel) {
         String sql = "INSERT INTO synos (id, word, synos, updatetime, createdtime, source) VALUES(?, ?, ?, datetime('now'), datetime('now'), ?)";

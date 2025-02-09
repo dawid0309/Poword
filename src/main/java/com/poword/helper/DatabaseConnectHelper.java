@@ -7,17 +7,13 @@ import java.sql.SQLException;
 public class DatabaseConnectHelper {
     private static DatabaseConnectHelper instance;
     private Connection conn;
-    private String dbname;
+    private String dbname = ConfigHelper.getDbUrl();
 
-    private DatabaseConnectHelper(String dbname) {
-        this.dbname = dbname;
-    }
-
-    public static DatabaseConnectHelper getInstance(String dbname) {
+    public static DatabaseConnectHelper getInstance() {
         if (instance == null) {
             synchronized (DatabaseConnectHelper.class) {
                 if (instance == null) {
-                    instance = new DatabaseConnectHelper(dbname);
+                    instance = new DatabaseConnectHelper();
                     instance.open();
                 }
             }

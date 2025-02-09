@@ -16,7 +16,7 @@ public class ReviewLogDao {
     private Connection conn;
 
     private ReviewLogDao() {
-        this.conn = DatabaseConnectHelper.getInstance("src\\main\\java\\com\\poword\\resources\\db\\stardict.db").getConnection();
+        this.conn = DatabaseConnectHelper.getInstance().getConnection();
     }
 
     // 插入复习记录

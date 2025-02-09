@@ -1,6 +1,6 @@
 package com.poword.tool;
 
-import com.poword.dao.StarDictDao;
+import com.poword.dao.DictDao;
 import com.poword.dao.SynosDao;
 import com.poword.model.*;
 
@@ -18,7 +18,7 @@ import java.io.BufferedReader;
 
 public class SynosImporter{
     private SynosDao synosDao = new SynosDao();
-    private StarDictDao starDictDao = new StarDictDao();
+    private DictDao starDictDao = DictDao.getInstance();
 
     public void insertSynos(String filePath){
         ArrayList<JSONObject> jsonObjects = getJsonObjects(filePath);

@@ -16,7 +16,7 @@ public class QueryLogDao {
     private Connection conn;
 
     private QueryLogDao() {
-        this.conn = DatabaseConnectHelper.getInstance("src\\main\\java\\com\\poword\\resources\\db\\stardict.db").getConnection();
+        this.conn = DatabaseConnectHelper.getInstance().getConnection();
     }
 
     public QueryLogModel queryLogByQueryId(long queryId) {

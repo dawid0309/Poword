@@ -3,21 +3,20 @@ import java.sql.*;
 import java.util.*;
 
 import lombok.Getter;
-import org.json.JSONObject;
 
 import com.poword.model.WordBaseModel;
 import com.poword.model.WordDetailModel;
 import com.poword.model.WordModel;
 import com.poword.helper.DatabaseConnectHelper;
 
-public class StarDictDao {
+public class DictDao {
 
     private Connection conn;
     @Getter
-    private static StarDictDao instance = new StarDictDao();
+    private static DictDao instance = new DictDao();
 
-    public StarDictDao() {
-        this.conn = DatabaseConnectHelper.getInstance("src\\main\\java\\com\\poword\\resources\\db\\stardict.db").getConnection();
+    public DictDao() {
+        this.conn = DatabaseConnectHelper.getInstance().getConnection();
     }
 
     /**
@@ -25,7 +24,7 @@ public class StarDictDao {
      * @return
      */
     public int getIdByWord(String word){
-        String sql = "SELECT id FROM stardict WHERE word = ?";
+        String sql = "SELECT id FROM dict WHERE word = ?";
         int id = 0;
         try(PreparedStatement pstmt = this.conn.prepareStatement(sql)) {
             pstmt.setString(1, word);
@@ -45,9 +44,9 @@ public class StarDictDao {
         WordBaseModel wordModel = null;
         try {
             if (key instanceof Integer) {
-                sql = "SELECT * FROM stardict WHERE id = ?;";
+                sql = "SELECT * FROM dict WHERE id = ?;";
             } else if (key instanceof String) {
-                sql = "SELECT * FROM stardict WHERE word = ?;";
+                sql = "SELECT * FROM dict WHERE word = ?;";
             } else {
                 return null;
             }
@@ -101,9 +100,9 @@ public class StarDictDao {
         String sql;
         try {
             if (!strip) {
-                sql = "SELECT * FROM stardict WHERE word >= ? ORDER BY word COLLATE NOCASE LIMIT ?;";
+                sql = "SELECT * FROM dict WHERE word >= ? ORDER BY word COLLATE NOCASE LIMIT ?;";
             } else {
-                sql = "SELECT * FROM stardict WHERE sw >= ? ORDER BY sw, word COLLATE NOCASE LIMIT ?;";
+                sql = "SELECT * FROM dict WHERE sw >= ? ORDER BY sw, word COLLATE NOCASE LIMIT ?;";
                 word = stripWord(word);
             }
 
@@ -153,7 +152,7 @@ public class StarDictDao {
             return new ArrayList<>();
         }
 
-        StringBuilder sql = new StringBuilder("SELECT * FROM stardict WHERE ");
+        StringBuilder sql = new StringBuilder("SELECT * FROM dict WHERE ");
         List<String> querys = new ArrayList<>();
         for (Object key : keys) {
             if (key instanceof Integer) {
@@ -218,7 +217,7 @@ public class StarDictDao {
     public int count() {
         try {
             Statement stmt = this.conn.createStatement();
-            ResultSet record = stmt.executeQuery("SELECT COUNT(*) FROM stardict;");
+            ResultSet record = stmt.executeQuery("SELECT COUNT(*) FROM dict;");
             if (record.next()) {
                 return record.getInt(1);
             }
@@ -232,9 +231,9 @@ public class StarDictDao {
     public boolean remove(Object key, boolean commit) {
         String sql;
         if (key instanceof Integer) {
-            sql = "DELETE FROM stardict WHERE id = ?;";
+            sql = "DELETE FROM dict WHERE id = ?;";
         } else {
-            sql = "DELETE FROM stardict WHERE word = ?;";
+            sql = "DELETE FROM dict WHERE word = ?;";
         }
 
         try {
