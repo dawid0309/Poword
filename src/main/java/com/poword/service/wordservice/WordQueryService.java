@@ -1,4 +1,4 @@
-package com.poword.service;
+package com.poword.service.wordservice;
 
 import com.poword.dao.QueryLogDao;
 import com.poword.dao.DictDao;

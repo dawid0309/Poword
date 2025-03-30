@@ -3,7 +3,7 @@ package com.wordslab;
 import com.poword.dao.DictDao;
 import com.poword.model.WordBaseModel;
 import com.poword.model.WordModel;
-import com.poword.service.WordQueryService;
+import com.poword.service.wordservice.WordQueryService;
 import org.junit.jupiter.api.Test;
 
 import com.poword.model.WordDetailModel;
